@@ -31,14 +31,14 @@ public class UdpClientService implements TransferClientService {
     private UdpFileClientService udpFileClientService;
 
     @Autowired
-    public UdpClientService() throws SocketException {
-        this.clientSocket = new DatagramSocket();
+    public UdpClientService() {
         this.serverMeta = new SocketMeta();
         this.udpFileClientService = new UdpFileClientService();
     }
 
     @Override
     public void connectServer(String host, int port) throws IOException {
+        clientSocket = new DatagramSocket();
         serverMeta = new SocketMeta();
         serverMeta.setAddress(InetAddress.getByName(host));
         serverMeta.setPort(port);

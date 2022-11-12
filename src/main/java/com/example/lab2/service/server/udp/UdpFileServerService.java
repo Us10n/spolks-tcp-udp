@@ -75,7 +75,7 @@ public class UdpFileServerService {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
                 }
-//                log.info("recieved packet " + data.getNumberOfPacket());
+                log.info("recieved packet " + data.getNumberOfPacket());
                 offsets.setServerReceived(data.getMinGuaranteedReceived() + 1);
                 file.seek(data.getNumberOfPacket() * BUFFER_SIZE);
                 file.write(data.getData());
@@ -117,9 +117,15 @@ public class UdpFileServerService {
             boolean isEOF = false;
             long minGuaranteed = 0;
             int manyPacketsNotReceivedTimes = 0;
-            while (!isEOF && sendingWindow.isEmpty()) {
+            while (true) {
+                if (isEOF && sendingWindow.isEmpty()) {
+                    break;
+                }
                 while (sendingWindow.size() < 5) {
                     isEOF = fileInputStream.read(buffer) == -1;
+                    if (isEOF) {
+                        break;
+                    }
                     var data = new TransmissionPacket(CommandType.DOWNLOAD, Arrays.copyOf(buffer, buffer.length),
                             numberOfPacket, fileName, fileSize, minGuaranteed);
                     sendingWindow.put(data.getNumberOfPacket(), data);

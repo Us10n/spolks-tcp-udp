@@ -101,15 +101,21 @@ public class UdpFileClientService {
             boolean isEOF = false;
             long minGuaranteed = 0;
             int manyPacketsNotReceivedTimes = 0;
-            while (!isEOF && sendingWindow.isEmpty()) {
+            while (true) {
+                if (isEOF && sendingWindow.isEmpty()) {
+                    break;
+                }
                 while (sendingWindow.size() < 5) {
                     isEOF = fileInputStream.read(buffer) == -1;
+                    if (isEOF) {
+                        break;
+                    }
                     var data = new TransmissionPacket(CommandType.UPLOAD, Arrays.copyOf(buffer, buffer.length),
                             numberOfPacket, fileName, fileSize, minGuaranteed);
                     sendingWindow.put(data.getNumberOfPacket(), data);
                     numberOfPacket++;
+                    minGuaranteed = (long) sendingWindow.keySet().toArray()[0];
                 }
-                minGuaranteed = (long) sendingWindow.keySet().toArray()[0];
                 for (TransmissionPacket packet : sendingWindow.values()) {
                     sendObject(socket, recipientAddress, recipientPort, packet);
                 }
