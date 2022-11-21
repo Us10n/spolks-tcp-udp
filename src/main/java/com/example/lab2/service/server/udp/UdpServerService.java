@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.LocalTime;
 
 import static com.example.lab2.util.Converter.convertBytesToTransmissionPacket;
@@ -36,7 +37,7 @@ public class UdpServerService implements TransferServerService {
     }
 
     @Override
-    public void runHandler(){
+    public void runHandler() {
         while (true) {
             try {
                 var command = readCommand();
@@ -47,7 +48,10 @@ public class UdpServerService implements TransferServerService {
                     case UPLOAD -> receiveFile(command);
                     case DOWNLOAD -> sendFile(command);
                 }
+            } catch (SocketException | SocketTimeoutException e) {
+                log.info("Client disconnected");
             } catch (Exception e) {
+                log.error("Unknown exception");
                 e.printStackTrace();
             }
         }

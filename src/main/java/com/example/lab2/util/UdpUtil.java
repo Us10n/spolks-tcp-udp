@@ -74,7 +74,7 @@ public class UdpUtil {
             }
         }
         socket.setSoTimeout(0);
-        return Optional.empty();
+        throw new SocketTimeoutException();
     }
 
     public static Optional<TransmissionPacket> sendPacketAndReceiveAckWithTimeOut(DatagramSocket socket, InetAddress recipientAddress,
@@ -93,7 +93,7 @@ public class UdpUtil {
             }
         }
         socket.setSoTimeout(0);
-        return Optional.empty();
+        throw new SocketTimeoutException();
     }
 
 }

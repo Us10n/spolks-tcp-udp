@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.LocalTime;
@@ -44,19 +44,15 @@ public class TcpClientService implements TransferClientService {
     @Override
     public String sendEcho(String echoMessage) throws IOException {
         sendPacket(clientSocket, new TransmissionPacket(CommandType.ECHO, convertObjectToBytes(echoMessage)));
-        var receivedPacketOptional = receivePacketWithTimeOut(clientSocket, TimeOut.ECHO);
-        return receivedPacketOptional
-                .map(packet -> (String) convertBytesToObject(receivedPacketOptional.get().getData()))
-                .orElse("Couldn't execute echo command");
+        var receivedPacket = receivePacketWithTimeOut(clientSocket, TimeOut.ECHO);
+        return (String) convertBytesToObject(receivedPacket.getData());
     }
 
     @Override
     public String requestTime() throws IOException {
         sendPacket(clientSocket, new TransmissionPacket(CommandType.TIME));
-        var receivedPacketOptional = receivePacketWithTimeOut(clientSocket, TimeOut.TIME);
-        return receivedPacketOptional
-                .map(packet -> ((LocalTime) convertBytesToObject(packet.getData())).toString())
-                .orElse("Couldn't execute time command");
+        var receivePacket = receivePacketWithTimeOut(clientSocket, TimeOut.TIME);
+        return ((LocalTime) convertBytesToObject(receivePacket.getData())).toString();
     }
 
     @Override

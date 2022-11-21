@@ -43,12 +43,8 @@ public class TcpFileServerService {
         }
         lastFileNameReceive = fileName;
 
-        var canReadOptional = TcpUtil.receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
-        if (canReadOptional.isEmpty()) {
-            log.error("Couldn't receive file can read");
-            return;
-        }
-        boolean canRead = (boolean) convertBytesToObject(canReadOptional.get().getData());
+        var packet = TcpUtil.receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
+        boolean canRead = (boolean) convertBytesToObject(packet.getData());
         if (!canRead) {
             log.warn("File doesn't exists on client");
             return;
@@ -58,13 +54,8 @@ public class TcpFileServerService {
         try (RandomAccessFile file = new RandomAccessFile(fileNameBuilder.toString(), "rwd")) {
             bitrateUtil.addTimeBorder(System.currentTimeMillis());
             while (true) {
-                var dataOptional = receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
-                if (dataOptional.isEmpty()) {
-                    log.warn("Couldn't receive file");
-                    return;
-                }
+                var data = receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
                 sendPacket(socket, new TransmissionPacket(CommandType.UPLOAD, true));
-                var data = dataOptional.get();
                 if (data.isEof()) {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
@@ -105,18 +96,19 @@ public class TcpFileServerService {
             boolean isEOF = false;
             long minGuaranteed = 0;
 
-            while (!isEOF) {
+            while (true) {
                 isEOF = fileInputStream.read(buffer) == -1;
+                if (isEOF) {
+                    sendPacket(socket, new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()));
+                    receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
+                    break;
+                }
                 var data = new TransmissionPacket(CommandType.UPLOAD, Arrays.copyOf(buffer, buffer.length),
                         numberOfPacket, fileName, fileSize, minGuaranteed);
                 numberOfPacket++;
                 sendPacket(socket, data);
-                if (receivePacketWithTimeOut(socket, TimeOut.UPLOAD).isEmpty()) {
-                    log.info("Server can't send file");
-                    return;
-                }
+                receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
             }
-            sendPacket(socket, new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()));
 
             offsets.setClientReceived(0);
             log.info("File sent");

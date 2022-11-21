@@ -8,7 +8,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.Optional;
 
 @Slf4j
 public class TcpUtil {
@@ -25,19 +24,19 @@ public class TcpUtil {
         }
     }
 
-    public static Optional<TransmissionPacket> receivePacketWithTimeOut(Socket socket, int timeOut) throws IOException {
+    public static TransmissionPacket receivePacketWithTimeOut(Socket socket, int timeOut) throws IOException {
         socket.setSoTimeout(timeOut);
         int tries = 0;
         while (tries++ < 5) {
             try {
                 var datagramPacket = receivePacket(socket);
                 socket.setSoTimeout(0);
-                return Optional.of(datagramPacket);
+                return datagramPacket;
             } catch (SocketTimeoutException ex) {
                 log.warn("TIMEOUT: Can't receive packet");
             }
         }
         socket.setSoTimeout(0);
-        return Optional.empty();
+        throw new SocketTimeoutException();
     }
 }

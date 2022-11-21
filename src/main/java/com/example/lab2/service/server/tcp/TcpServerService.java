@@ -8,11 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.LocalTime;
 
 import static com.example.lab2.util.TcpUtil.receivePacket;
@@ -49,7 +49,12 @@ public class TcpServerService implements TransferServerService {
                         case DOWNLOAD -> sendFile(command);
                     }
                 }
+            } catch (SocketException | SocketTimeoutException e) {
+                log.info("Client disconnected");
+                clientSocket.close();
             } catch (Exception e) {
+                log.info("Client disconnected");
+                disconnect();
                 e.printStackTrace();
             }
         }
@@ -70,11 +75,15 @@ public class TcpServerService implements TransferServerService {
     public void sendTime(TransmissionPacket receivedCommand) throws IOException {
         var time = LocalTime.now();
         log.info("Time: " + time.toString());
-        sendPacket(clientSocket, new TransmissionPacket(CommandType.ECHO, Converter.convertObjectToBytes(time), true));
+        sendPacket(clientSocket, new TransmissionPacket(CommandType.TIME, Converter.convertObjectToBytes(time), true));
     }
 
     @Override
     public void connect(TransmissionPacket receivedCommand) throws IOException {
+    }
+
+    public void disconnect() throws IOException {
+        serverSocket.close();
     }
 
     @Override

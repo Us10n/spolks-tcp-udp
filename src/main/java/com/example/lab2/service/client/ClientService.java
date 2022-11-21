@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -23,7 +26,7 @@ public class ClientService implements Service {
     @Autowired
     private TransferClientService transferClientService;
 
-    public void run() {
+    public void run() throws IOException {
         log.info("Client started");
         Scanner scanner = new Scanner(System.in);
 
@@ -99,38 +102,13 @@ public class ClientService implements Service {
                             log.warn("Client is not connected to any server.");
                         }
                     }
-//
-//                    case CommandType.UPLOAD -> {
-//                        if (isConnectedToServer) {
-//                            clientSocket.setSoTimeout(TimeOut.UPLOAD);
-//                            if (commandArgs.length != 2) {
-//                                System.out.println("No file name specified");
-//                                break;
-//                            }
-//                            fileIOService.sendFile(command, commandArgs[1], in, out);
-//                        } else {
-//                            System.out.println("Client is not connected to any server.");
-//                        }
-//                    }
-//
-//                    case CommandType.DOWNLOAD -> {
-//                        if (isConnectedToServer) {
-//                            clientSocket.setSoTimeout(TimeOut.DOWNLOAD);
-//                            if (commandArgs.length != 2) {
-//                                System.out.println("No file name specified");
-//                                break;
-//                            }
-//                            fileIOService.receiveFile(command, commandArgs[1], in, out);
-////                            fileIOService.printBitrate();
-////                            fileIOService.clearBorders();
-//                        } else {
-//                            System.out.println("Client is not connected to any server.");
-//                        }
-//                    }
                     case HELP -> printHelp();
-
                     default -> log.warn("No command found");
                 }
+            } catch (SocketException | SocketTimeoutException e) {
+                log.info("Server disconnected");
+                transferClientService.disconnectServer();
+                isConnectedToServer = false;
             } catch (Exception e) {
                 log.error("Unknown exception");
                 e.printStackTrace();

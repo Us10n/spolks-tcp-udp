@@ -31,12 +31,8 @@ public class TcpFileClientService {
                 .append("/")
                 .append(fileName);
 
-        var canReadOptional = receivePacketWithTimeOut(socket, TimeOut.DOWNLOAD);
-        if (canReadOptional.isEmpty()) {
-            log.error("Couldn't receive can read");
-            return;
-        }
-        var canRead = (boolean) convertBytesToObject(canReadOptional.get().getData());
+        var packet = receivePacketWithTimeOut(socket, TimeOut.DOWNLOAD);
+        var canRead = (boolean) convertBytesToObject(packet.getData());
         if (!canRead) {
             log.warn("File doesn't exists on server");
             return;
@@ -45,13 +41,8 @@ public class TcpFileClientService {
         try (RandomAccessFile file = new RandomAccessFile(fileNameBuilder.toString(), "rwd")) {
             bitrateUtil.addTimeBorder(System.currentTimeMillis());
             while (true) {
-                var dataOptional = receivePacketWithTimeOut(socket, TimeOut.DOWNLOAD);
+                var data = receivePacketWithTimeOut(socket, TimeOut.DOWNLOAD);
                 sendPacket(socket, new TransmissionPacket(CommandType.DOWNLOAD, true));
-                if (dataOptional.isEmpty()) {
-                    log.warn("Couldn't receive file");
-                    return;
-                }
-                var data = dataOptional.get();
                 if (data.isEof()) {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
@@ -79,12 +70,8 @@ public class TcpFileClientService {
             sendPacket(socket, new TransmissionPacket(CommandType.UPLOAD, Converter.convertObjectToBytes(file.canRead())));
             var fileSize = file.length();
 
-            var primaryOffsetOptional = receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
-            if (primaryOffsetOptional.isEmpty()) {
-                log.error("Couldn't receive primary offset");
-                return;
-            }
-            long primaryOffset = (Long) convertBytesToObject(primaryOffsetOptional.get().getData());
+            var packet = receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
+            long primaryOffset = (Long) convertBytesToObject(packet.getData());
             long numberOfPacket = primaryOffset;
             fileInputStream.getChannel().position(primaryOffset * BUFFER_SIZE);
             byte[] buffer = new byte[BUFFER_SIZE];
@@ -95,6 +82,7 @@ public class TcpFileClientService {
                 isEOF = fileInputStream.read(buffer) == -1;
                 if (isEOF) {
                     sendPacket(socket, new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()));
+                    receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
                     break;
                 }
                 var data = new TransmissionPacket(CommandType.UPLOAD, Arrays.copyOf(buffer, buffer.length),
@@ -102,10 +90,7 @@ public class TcpFileClientService {
                 numberOfPacket++;
 
                 sendPacket(socket, data);
-                if (receivePacketWithTimeOut(socket, TimeOut.UPLOAD).isEmpty()) {
-                    log.info("Server doesn't receive many packet");
-                    return;
-                }
+                receivePacketWithTimeOut(socket, TimeOut.UPLOAD);
             }
 
             System.out.println("File sent");
