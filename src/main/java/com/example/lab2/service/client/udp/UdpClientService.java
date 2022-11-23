@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.time.LocalTime;
 
 import static com.example.lab2.util.Converter.convertBytesToObject;
@@ -57,9 +56,7 @@ public class UdpClientService implements TransferClientService {
         var packetToSend = new TransmissionPacket(CommandType.ECHO, convertObjectToBytes(echoString));
         var receivedPacket = sendPacketAndReceiveAckWithTimeOut(
                 clientSocket, serverMeta.getAddress(), serverMeta.getPort(), packetToSend, TimeOut.ECHO);
-        return receivedPacket
-                .map(packet -> (String) convertBytesToObject(receivedPacket.get().getData()))
-                .orElse("Couldn't execute echo command");
+        return (String) convertBytesToObject(receivedPacket.getData());
     }
 
     @Override
@@ -67,31 +64,21 @@ public class UdpClientService implements TransferClientService {
         var packetToSend = new TransmissionPacket(CommandType.TIME);
         var receivedPacket = sendPacketAndReceiveAckWithTimeOut(
                 clientSocket, serverMeta.getAddress(), serverMeta.getPort(), packetToSend, TimeOut.TIME);
-        return receivedPacket
-                .map(packet -> ((LocalTime) convertBytesToObject(packet.getData())).toString())
-                .orElse("Couldn't execute time command");
+        return ((LocalTime) convertBytesToObject(receivedPacket.getData())).toString();
     }
 
     @Override
     public void uploadFile(String filename) throws IOException {
-        if (sendPacketAndReceiveAckWithTimeOut(clientSocket, serverMeta.getAddress(),
-                serverMeta.getPort(), new TransmissionPacket(CommandType.UPLOAD, filename), TimeOut.UPLOAD)
-                .isPresent()) {
-            udpFileClientService.sendFile(clientSocket, serverMeta.getAddress(), serverMeta.getPort(), filename);
-        } else {
-            log.error("Couldn't initiate upload file");
-        }
+        sendPacketAndReceiveAckWithTimeOut(clientSocket, serverMeta.getAddress(),
+                serverMeta.getPort(), new TransmissionPacket(CommandType.UPLOAD, filename), TimeOut.UPLOAD);
+        udpFileClientService.sendFile(clientSocket, serverMeta.getAddress(), serverMeta.getPort(), filename);
     }
 
     @Override
     public void downloadFile(String fileName) throws IOException {
-        if (sendPacketAndReceiveAckWithTimeOut(clientSocket, serverMeta.getAddress(),
-                serverMeta.getPort(), new TransmissionPacket(CommandType.DOWNLOAD, fileName), TimeOut.DOWNLOAD)
-                .isPresent()) {
-            udpFileClientService.receiveFile(clientSocket, serverMeta.getAddress(), serverMeta.getPort(), fileName);
-            udpFileClientService.printBitrate();
-        } else {
-            log.error("Couldn't initiate download file");
-        }
+        sendPacketAndReceiveAckWithTimeOut(clientSocket, serverMeta.getAddress(),
+                serverMeta.getPort(), new TransmissionPacket(CommandType.DOWNLOAD, fileName), TimeOut.DOWNLOAD);
+        udpFileClientService.receiveFile(clientSocket, serverMeta.getAddress(), serverMeta.getPort(), fileName);
+        udpFileClientService.printBitrate();
     }
 }

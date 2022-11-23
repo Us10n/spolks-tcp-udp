@@ -61,14 +61,14 @@ public class UdpUtil {
         return packet;
     }
 
-    public static Optional<TransmissionPacket> receivePacketWithTimeOutAndSendAck(DatagramSocket socket, int timeOut) throws IOException {
+    public static TransmissionPacket receivePacketWithTimeOutAndSendAck(DatagramSocket socket, int timeOut) throws IOException {
         socket.setSoTimeout(timeOut);
         int tries = 0;
         while (tries++ < 5) {
             try {
                 var transmissionPacket = receivePacketAndSendAck(socket);
                 socket.setSoTimeout(0);
-                return Optional.of(transmissionPacket);
+                return transmissionPacket;
             } catch (SocketTimeoutException ex) {
                 log.warn("TIMEOUT: Can't receive packet");
             }
@@ -77,7 +77,7 @@ public class UdpUtil {
         throw new SocketTimeoutException();
     }
 
-    public static Optional<TransmissionPacket> sendPacketAndReceiveAckWithTimeOut(DatagramSocket socket, InetAddress recipientAddress,
+    public static TransmissionPacket sendPacketAndReceiveAckWithTimeOut(DatagramSocket socket, InetAddress recipientAddress,
                                                                                   Integer recipientPort, TransmissionPacket packet,
                                                                                   int timeOut) throws IOException {
         socket.setSoTimeout(timeOut);
@@ -87,7 +87,7 @@ public class UdpUtil {
                 sendObject(socket, recipientAddress, recipientPort, packet);
                 var datagramPacket = receiveDatagram(socket);
                 socket.setSoTimeout(0);
-                return Optional.ofNullable(convertBytesToTransmissionPacket(datagramPacket.getData()));
+                return convertBytesToTransmissionPacket(datagramPacket.getData());
             } catch (SocketTimeoutException ex) {
                 log.warn("TIMEOUT: Can't receive ack");
             }

@@ -47,30 +47,19 @@ public class UdpFileServerService {
         }
         lastFileNameReceive = fileName;
 
-        var canReadOptional = receivePacketWithTimeOutAndSendAck(socket, TimeOut.UPLOAD);
-        if (canReadOptional.isEmpty()) {
-            log.error("Couldn't receive file can read");
-            return;
-        }
-        boolean canRead = (boolean) convertBytesToObject(canReadOptional.get().getData());
+        var packet = receivePacketWithTimeOutAndSendAck(socket, TimeOut.UPLOAD);
+        boolean canRead = (boolean) convertBytesToObject(packet.getData());
         if (!canRead) {
             log.warn("File doesn't exists on client");
             return;
         }
-        if (sendPacketAndReceiveAckWithTimeOut(socket, senderAddress, senderPort,
-                new TransmissionPacket(CommandType.UPLOAD, convertObjectToBytes(offsets.getServerReceived())), TimeOut.UPLOAD).isEmpty()) {
-            log.error("Couldn't send primary offset");
-            return;
-        }
+        sendPacketAndReceiveAckWithTimeOut(socket, senderAddress, senderPort,
+                new TransmissionPacket(CommandType.UPLOAD, convertObjectToBytes(offsets.getServerReceived())), TimeOut.UPLOAD);
+
         try (RandomAccessFile file = new RandomAccessFile(fileNameBuilder.toString(), "rwd")) {
             bitrateUtil.addTimeBorder(System.currentTimeMillis());
             while (true) {
-                var dataOptional = receivePacketWithTimeOutAndSendAck(socket, TimeOut.UPLOAD);
-                if (dataOptional.isEmpty()) {
-                    log.warn("Couldn't receive file");
-                    return;
-                }
-                var data = dataOptional.get();
+                var data = receivePacketWithTimeOutAndSendAck(socket, TimeOut.UPLOAD);
                 if (data.isEof()) {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
@@ -102,11 +91,9 @@ public class UdpFileServerService {
 
         File file = new File(fileNameBuilder.toString());
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            if (sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
-                    new TransmissionPacket(CommandType.DOWNLOAD, convertObjectToBytes(file.canRead())), TimeOut.DOWNLOAD).isEmpty()) {
-                log.error("Couldn't send file can read");
-                return;
-            }
+            sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
+                    new TransmissionPacket(CommandType.DOWNLOAD, convertObjectToBytes(file.canRead())), TimeOut.DOWNLOAD);
+
             var fileSize = file.length();
 
             var primaryOffset = offsets.getClientReceived();
@@ -147,11 +134,8 @@ public class UdpFileServerService {
                     return;
                 }
             }
-            if (sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
-                    new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()), TimeOut.UPLOAD).isEmpty()) {
-                log.error("Couldn't send EOF");
-                return;
-            }
+            sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
+                    new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()), TimeOut.UPLOAD);
 
             offsets.setClientReceived(0);
             log.info("File sent");
