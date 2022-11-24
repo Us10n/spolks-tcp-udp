@@ -40,13 +40,12 @@ public class UdpUtil {
     }
 
     public static Optional<TransmissionPacket> receivePacketWithTimeOut(DatagramSocket socket, int timeOut) throws IOException {
+        socket.setSoTimeout(timeOut);
         try {
-            socket.setSoTimeout(timeOut);
-            byte[] receivingBuffer = new byte[PACKET_SIZE];
-            var receivingPacket = createReceivingPacket(receivingBuffer);
-            socket.receive(receivingPacket);
-            return Optional.ofNullable(convertBytesToTransmissionPacket(receivingPacket.getData()));
-        } catch (SocketTimeoutException ex) {
+            var datagramPacket = receiveDatagram(socket);
+            return Optional.ofNullable(convertBytesToTransmissionPacket(datagramPacket.getData()));
+        } catch (IOException ex) {
+            log.warn("TIMEOUT: Can't receive packet");
             return Optional.empty();
         } finally {
             socket.setSoTimeout(0);

@@ -32,7 +32,7 @@ public class TcpUtil {
                 var datagramPacket = receivePacket(socket);
                 socket.setSoTimeout(0);
                 return datagramPacket;
-            } catch (SocketTimeoutException ex) {
+            } catch (IOException ex) {
                 log.warn("TIMEOUT: Can't receive packet");
             }
         }

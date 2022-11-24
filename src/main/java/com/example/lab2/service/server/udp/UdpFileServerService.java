@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.*;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class UdpFileServerService {
         boolean canRead = (boolean) convertBytesToObject(packet.getData());
         if (!canRead) {
             log.warn("File doesn't exists on client");
-            return;
+            throw new FileNotFoundException();
         }
         sendPacketAndReceiveAckWithTimeOut(socket, senderAddress, senderPort,
                 new TransmissionPacket(CommandType.UPLOAD, convertObjectToBytes(offsets.getServerReceived())), TimeOut.UPLOAD);
@@ -123,15 +124,15 @@ public class UdpFileServerService {
                     sendObject(socket, recipientAddress, recipientPort, packet);
                 }
                 Optional<TransmissionPacket> receivedPacket;
-                while (!sendingWindow.isEmpty() && (receivedPacket = receivePacketWithTimeOut(socket, 0)).isPresent()) {
+                while (!sendingWindow.isEmpty() && (receivedPacket = receivePacketWithTimeOut(socket, TimeOut.UPLOAD)).isPresent()) {
                     sendingWindow.remove(receivedPacket.get().getNumberOfPacket());
                 }
                 if (sendingWindow.size() > 3) {
                     manyPacketsNotReceivedTimes++;
                 }
                 if (manyPacketsNotReceivedTimes >= 5) {
-                    log.info("Server doesn't receive many packet");
-                    return;
+                    log.info("Client doesn't receive many packet");
+                    throw new SocketTimeoutException();
                 }
             }
             sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
@@ -140,6 +141,7 @@ public class UdpFileServerService {
             offsets.setClientReceived(0);
             log.info("File sent");
         } catch (FileNotFoundException e) {
+            log.warn("File cannot be opened");
             sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress,
                     recipientPort, new TransmissionPacket(CommandType.UPLOAD, convertObjectToBytes(file.canRead())), TimeOut.UPLOAD);
         }

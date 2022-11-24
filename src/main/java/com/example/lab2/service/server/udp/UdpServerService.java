@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.SocketException;
@@ -50,6 +51,7 @@ public class UdpServerService implements TransferServerService {
                 }
             } catch (SocketException | SocketTimeoutException e) {
                 log.info("Client disconnected");
+            } catch (FileNotFoundException ignored) {
             } catch (Exception e) {
                 log.error("Unknown exception");
                 e.printStackTrace();

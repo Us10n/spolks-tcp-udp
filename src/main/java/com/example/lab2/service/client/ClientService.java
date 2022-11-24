@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -109,9 +110,11 @@ public class ClientService implements Service {
                 log.info("Server disconnected");
                 transferClientService.disconnectServer();
                 isConnectedToServer = false;
+            } catch (FileNotFoundException ignored) {
             } catch (Exception e) {
                 log.error("Unknown exception");
                 e.printStackTrace();
+                transferClientService.disconnectServer();
                 isConnectedToServer = false;
             }
         }

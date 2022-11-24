@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.*;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class UdpFileClientService {
         var canRead = (boolean) convertBytesToObject(packet.getData());
         if (!canRead) {
             log.warn("File doesn't exists on server");
-            return;
+            throw new FileNotFoundException();
         }
 
         try (RandomAccessFile file = new RandomAccessFile(fileNameBuilder.toString(), "rwd")) {
@@ -52,7 +53,7 @@ public class UdpFileClientService {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
                 }
-//                log.info("recieved packet " + data.getNumberOfPacket());
+                log.info("recieved packet " + data.getNumberOfPacket());
                 file.seek(data.getNumberOfPacket() * BUFFER_SIZE);
                 file.write(data.getData());
             }
@@ -104,7 +105,7 @@ public class UdpFileClientService {
                     sendObject(socket, recipientAddress, recipientPort, windowPacket);
                 }
                 Optional<TransmissionPacket> receivedPacket;
-                while (!sendingWindow.isEmpty() && (receivedPacket = receivePacketWithTimeOut(socket, 0)).isPresent()) {
+                while (!sendingWindow.isEmpty() && (receivedPacket = receivePacketWithTimeOut(socket, TimeOut.UPLOAD)).isPresent()) {
                     sendingWindow.remove(receivedPacket.get().getNumberOfPacket());
                 }
                 if (sendingWindow.size() > 3) {
@@ -112,14 +113,16 @@ public class UdpFileClientService {
                 }
                 if (manyPacketsNotReceivedTimes >= 5) {
                     log.info("Server doesn't receive many packet");
-                    return;
+                    throw new SocketTimeoutException();
                 }
+                log.info("sending window size " + sendingWindow.size());
             }
             sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress, recipientPort,
                     new TransmissionPacket(CommandType.UPLOAD).setEof(true).setFileSize(file.length()), TimeOut.UPLOAD);
 
             log.info("File sent");
         } catch (FileNotFoundException e) {
+            log.warn("File cannot be opened");
             sendPacketAndReceiveAckWithTimeOut(socket, recipientAddress,
                     recipientPort, new TransmissionPacket(CommandType.UPLOAD, convertObjectToBytes(file.canRead())), TimeOut.UPLOAD);
         }
