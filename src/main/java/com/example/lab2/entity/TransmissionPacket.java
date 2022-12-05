@@ -1,6 +1,7 @@
 package com.example.lab2.entity;
 
 import com.example.lab2.entity.constants.CommandType;
+import com.example.lab2.entity.constants.FileTransferStage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,20 +14,11 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransmissionPacket implements Serializable {
-    private long minGuaranteedReceived = 0;
-    private boolean isAck = false;
-    private boolean isEof = false;
-    private long numberOfPacket = 0;
-    private long fileSize = 0;
-    private CommandType commandType = CommandType.BLANK;
-    private byte[] data = new byte[]{};
-    private String fileName = "";
-
-
-    public TransmissionPacket(CommandType commandType, String fileName) {
-        this.commandType = commandType;
-        this.fileName = fileName;
-    }
+    private CommandType commandType;
+    private byte[] data;
+    private boolean isAck;
+    private FileMeta fileMeta;
+    private FileTransferStage fileTransferStage;
 
     public TransmissionPacket(CommandType commandType, byte[] data) {
         this.commandType = commandType;
@@ -39,15 +31,6 @@ public class TransmissionPacket implements Serializable {
         this.isAck = isAck;
     }
 
-    public TransmissionPacket(CommandType commandType, byte[] data,
-                              long numberOfPacket, String fileName, long fileSize) {
-        this.commandType = commandType;
-        this.data = data;
-        this.numberOfPacket = numberOfPacket;
-        this.fileName = fileName;
-        this.fileSize = fileSize;
-    }
-
     public TransmissionPacket(CommandType commandType) {
         this.commandType = commandType;
     }
@@ -57,22 +40,27 @@ public class TransmissionPacket implements Serializable {
         this.isAck = isAck;
     }
 
-    public TransmissionPacket(CommandType commandType, boolean isAck, long numberOfPacket, String fileName, long fileSize) {
+    public TransmissionPacket(CommandType commandType, FileMeta fileMeta) {
         this.commandType = commandType;
-        this.isAck = isAck;
-        this.numberOfPacket = numberOfPacket;
-        this.fileName = fileName;
-        this.fileSize = fileSize;
+        this.fileMeta = fileMeta;
     }
 
-    public TransmissionPacket(CommandType commandType, byte[] data,
-                              long numberOfPacket, String fileName, long fileSize,
-                              long minGuaranteedReceived) {
+    public TransmissionPacket(CommandType commandType, FileTransferStage fileTransferStage, FileMeta fileMeta) {
         this.commandType = commandType;
+        this.fileMeta = fileMeta;
+        this.fileTransferStage = fileTransferStage;
+    }
+
+    public TransmissionPacket(CommandType commandType, FileTransferStage fileTransferStage, boolean isAck) {
+        this.commandType = commandType;
+        this.fileTransferStage = fileTransferStage;
+        this.isAck = isAck;
+    }
+
+    public TransmissionPacket(CommandType commandType, FileTransferStage fileTransferStage, byte[] data, FileMeta fileMeta) {
+        this.commandType = commandType;
+        this.fileTransferStage = fileTransferStage;
         this.data = data;
-        this.numberOfPacket = numberOfPacket;
-        this.fileName = fileName;
-        this.fileSize = fileSize;
-        this.minGuaranteedReceived = minGuaranteedReceived;
+        this.fileMeta = fileMeta;
     }
 }

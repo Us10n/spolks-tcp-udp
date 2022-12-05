@@ -1,4 +1,4 @@
-package com.example.lab2.entity.constants;
+package com.example.lab2.entity;
 
 import lombok.Value;
 

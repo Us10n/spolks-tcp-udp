@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Offsets {
-    private long serverReceived = 0;
-    private long clientReceived = 0;
+    private Long serverReceived = 0L;
+    private Long clientReceived = 0L;
+    private String lastFileClientReceived = "";
+    private String lastFileServerReceived = "";
 }
