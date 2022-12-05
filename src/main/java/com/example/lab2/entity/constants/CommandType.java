@@ -1,7 +1,5 @@
 package com.example.lab2.entity.constants;
 
-import lombok.Value;
-
 //@Value
 //public class CommandType {
 //    public static final String CONNECT = "connect";

@@ -2,8 +2,6 @@ package com.example.lab2.service.client;
 
 import com.example.lab2.entity.constants.CommandType;
 import com.example.lab2.service.Service;
-import com.example.lab2.service.client.udp.UdpClientService;
-import com.example.lab2.service.server.TransferServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
