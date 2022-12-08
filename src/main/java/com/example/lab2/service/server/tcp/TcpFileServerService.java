@@ -60,6 +60,7 @@ public class TcpFileServerService {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
                 }
+                log.info("recieved packet " + data.getNumberOfPacket());
                 offsets.setServerReceived(data.getMinGuaranteedReceived() + 1);
                 file.seek(data.getNumberOfPacket() * BUFFER_SIZE);
                 file.write(data.getData());

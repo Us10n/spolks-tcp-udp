@@ -23,7 +23,6 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws IOException {
-        System.out.println(Converter.convertObjectToBytes(new TransmissionPacket(CommandType.DISCONNECT)).length);
         service.run();
     }
 }

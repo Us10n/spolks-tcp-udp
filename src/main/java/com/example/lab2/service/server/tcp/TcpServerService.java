@@ -3,9 +3,11 @@ package com.example.lab2.service.server.tcp;
 import com.example.lab2.entity.TransmissionPacket;
 import com.example.lab2.entity.constants.CommandType;
 import com.example.lab2.util.Converter;
+import com.example.lab2.util.TcpUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -33,25 +35,24 @@ public class TcpServerService implements Runnable {
 
 
     public void runHandler() throws IOException {
-        while (true) {
-            try {
-                while (true) {
-                    var command = readCommand();
-                    switch (command.getCommandType()) {
-                        case CONNECT -> connect(command);
-                        case ECHO -> sendEcho(command);
-                        case TIME -> sendTime(command);
-                        case UPLOAD -> receiveFile(command);
-                        case DOWNLOAD -> sendFile(command);
-                    }
+        try {
+            while (true) {
+                var command = readCommand();
+//                log.info(command.toString());
+                switch (command.getCommandType()) {
+                    case CONNECT -> connect(command);
+                    case ECHO -> sendEcho(command);
+                    case TIME -> sendTime(command);
+                    case UPLOAD -> receiveFile(command);
+                    case DOWNLOAD -> sendFile(command);
                 }
-            } catch (SocketException | SocketTimeoutException e) {
-                log.info("Client disconnected");
-                clientSocket.close();
-            } catch (Exception e) {
-                log.info("Client disconnected");
-                e.printStackTrace();
             }
+        } catch (EOFException | SocketException | SocketTimeoutException e) {
+            log.info("Client disconnected: " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+            clientSocket.close();
+        } catch (Exception e) {
+            log.info("Client disconnected: " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+            e.printStackTrace();
         }
     }
 

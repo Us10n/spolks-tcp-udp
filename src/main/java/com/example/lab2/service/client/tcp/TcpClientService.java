@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.time.LocalTime;
 
 import static com.example.lab2.util.Converter.convertBytesToObject;
@@ -34,11 +35,26 @@ public class TcpClientService implements TransferClientService {
     public void connectServer(String host, int port) throws IOException {
         clientSocket = new Socket();
         clientSocket.connect(new InetSocketAddress(host, port), TimeOut.CONNECTION);
+
     }
 
     @Override
     public void disconnectServer() throws IOException {
         clientSocket.close();
+    }
+
+    @Override
+    public boolean testConnection() throws IOException {
+        clientSocket.setSoTimeout(10);
+        try {
+            if (clientSocket.getInputStream().read() == -1) {
+                return false;
+            }
+        } catch (SocketTimeoutException ignored) {
+        } finally {
+            clientSocket.setSoTimeout(0);
+        }
+        return true;
     }
 
     @Override

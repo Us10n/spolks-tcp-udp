@@ -8,10 +8,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.net.Socket;
+import java.util.concurrent.*;
 
 import static com.example.lab2.entity.constants.Constants.MAX_POOL_SIZE;
 import static com.example.lab2.entity.constants.Constants.MIN_POOL_SIZE;
@@ -27,14 +25,21 @@ public class ServerService implements Service {
     @Override
     public void run() throws IOException {
         serverSocket = new ServerSocket(SERVER_PORT);
-        executorService = new ThreadPoolExecutor(MIN_POOL_SIZE, MAX_POOL_SIZE,
+        executorService = new ThreadPoolExecutor(1, 1,
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>());
         System.out.println("Server started");
         while (true) {
-            var clientSocket = serverSocket.accept();
-            log.info("Client connected: " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
-            executorService.submit(new TcpServerService(clientSocket));
+            Socket clientSocket = null;
+            try {
+                clientSocket = serverSocket.accept();
+                log.info("Client connected: " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+                executorService.submit(new TcpServerService(clientSocket));
+            } catch (RejectedExecutionException e) {
+                log.warn("Thread pool is full");
+                log.info("Client disconnected: " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+                clientSocket.close();
+            }
         }
     }
 }

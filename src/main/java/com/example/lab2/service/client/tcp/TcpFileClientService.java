@@ -47,7 +47,7 @@ public class TcpFileClientService {
                     bitrateUtil.setFileSize(data.getFileSize());
                     break;
                 }
-//                log.info("recieved packet " + data.getNumberOfPacket());
+                log.info("recieved packet " + data.getNumberOfPacket());
                 file.seek(data.getNumberOfPacket() * BUFFER_SIZE);
                 file.write(data.getData());
             }
