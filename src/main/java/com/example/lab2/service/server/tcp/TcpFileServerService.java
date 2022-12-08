@@ -74,6 +74,7 @@ public class TcpFileServerService {
                 file.seek(numberOfSendingBlock * BUFFER_SIZE);
                 file.write(packet.getData());
             }
+            log.info("received packet " + numberOfSendingBlock);
             offsets.setServerReceived(numberOfSendingBlock + 1);
             sendPacket(socket, new TransmissionPacket(
                 CommandType.UPLOAD, FileTransferStage.DATA_REQUEST,

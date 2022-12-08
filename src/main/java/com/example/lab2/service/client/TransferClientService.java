@@ -7,6 +7,8 @@ public interface TransferClientService {
 
     void disconnectServer() throws IOException;
 
+    boolean testConnection() throws IOException;
+
     String sendEcho(String echoMessage) throws IOException;
 
     String requestTime() throws IOException;

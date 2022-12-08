@@ -2,6 +2,8 @@ package com.example.lab2.service.client;
 
 import com.example.lab2.entity.constants.CommandType;
 import com.example.lab2.service.Service;
+import com.example.lab2.util.InputCommandQueue;
+import com.example.lab2.util.NonBlockingInputReader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -23,16 +25,26 @@ public class ClientService implements Service {
     private boolean isConnectedToServer = false;
 
     @Autowired
+    private InputCommandQueue inputCommandQueue;
+    @Autowired
     private TransferClientService transferClientService;
+    @Autowired
+    private NonBlockingInputReader nonBlockingInputReader;
 
     public void run() throws IOException {
         log.info("Client started");
-        Scanner scanner = new Scanner(System.in);
+        new Thread(nonBlockingInputReader).start();
 
         while (true) {
             try {
-                System.out.print(">>> ");
-                var commandString = scanner.nextLine().toLowerCase();
+                var commandStringOptional = inputCommandQueue.pollCommand();
+                if (isConnectedToServer && !transferClientService.testConnection()) {
+                    throw new SocketException();
+                }
+                if (commandStringOptional.isEmpty()) {
+                    continue;
+                }
+                var commandString = commandStringOptional.get();
                 String[] commandArgs = commandString.split(SPACE);
                 var commandType = Arrays.stream(CommandType.values())
                         .filter(command -> command.getValue().equals(commandArgs[0]))
