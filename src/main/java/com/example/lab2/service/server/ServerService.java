@@ -25,7 +25,7 @@ public class ServerService implements Service {
     @Override
     public void run() throws IOException {
         serverSocket = new ServerSocket(SERVER_PORT);
-        executorService = new ThreadPoolExecutor(1, 1,
+        executorService = new ThreadPoolExecutor(MIN_POOL_SIZE, MAX_POOL_SIZE,
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>());
         System.out.println("Server started");
