@@ -46,7 +46,7 @@ public class TcpClientService implements TransferClientService {
 
     @Override
     public boolean testConnection() throws IOException {
-        clientSocket.setSoTimeout(10);
+        clientSocket.setSoTimeout(200);
         try {
             if (clientSocket.getInputStream().read() == -1) {
                 return false;
